@@ -34,7 +34,8 @@ import { useDashboardTasks } from './hooks/useDashboardTasks';
 import { useBridgeConfig } from './hooks/useBridgeConfig';
 import { useGoogleCalendar, isGoogleCalendarId } from './hooks/useGoogleCalendar';
 import { useGoogleTasks, isGoogleTaskList } from './hooks/useGoogleTasks';
-import { captureSetupFromUrl, isBridgeConfigured } from './api/google-bridge';
+import { captureSetupFromUrl, isBridgeConfigured, GOOGLE_READ_ONLY_MESSAGE } from './api/google-bridge';
+import { EventDetails } from './components/EventDetails';
 import { NewsView } from './components/NewsView';
 import { WallView } from './components/WallView';
 import { GoogleSetupView } from './components/GoogleSetupView';
@@ -92,6 +93,8 @@ export function App() {
   const bridgeCfg = useBridgeConfig();
   const googleEnabled = isBridgeConfigured(bridgeCfg);
   const [showHaOnboarding, setShowHaOnboarding] = useState(false);
+  // Google events open in a read-only details panel (the bridge is view only).
+  const [viewEvent, setViewEvent] = useState<CalendarEvent | null>(null);
   const gcal = useGoogleCalendar(googleEnabled, {
     calendarColors: settings.calendarColors,
     members,
@@ -122,31 +125,31 @@ export function App() {
     if (calendarId === localCal.calendar.id) {
       localCal.createEvent(eventData);
     } else if (isGoogleCalendarId(calendarId)) {
-      await gcal.createEvent(calendarId, eventData);
+      throw new Error(GOOGLE_READ_ONLY_MESSAGE);
     } else {
       await createHaEvent(calendarId, eventData);
     }
-  }, [localCal, gcal.createEvent, createHaEvent]);
+  }, [localCal, createHaEvent]);
 
   const updateEvent = useCallback(async (calendarId: string, uid: string, eventData: Parameters<typeof updateHaEvent>[2]) => {
     if (calendarId === localCal.calendar.id) {
       localCal.updateEvent(uid, eventData);
     } else if (isGoogleCalendarId(calendarId)) {
-      await gcal.updateEvent(calendarId, uid, eventData);
+      throw new Error(GOOGLE_READ_ONLY_MESSAGE);
     } else {
       await updateHaEvent(calendarId, uid, eventData);
     }
-  }, [localCal, gcal.updateEvent, updateHaEvent]);
+  }, [localCal, updateHaEvent]);
 
   const deleteEvent = useCallback(async (calendarId: string, uid: string) => {
     if (calendarId === localCal.calendar.id) {
       localCal.deleteEvent(uid);
     } else if (isGoogleCalendarId(calendarId)) {
-      await gcal.deleteEvent(calendarId, uid);
+      throw new Error(GOOGLE_READ_ONLY_MESSAGE);
     } else {
       await deleteHaEvent(calendarId, uid);
     }
-  }, [localCal, gcal.deleteEvent, deleteHaEvent]);
+  }, [localCal, deleteHaEvent]);
 
   const { weather } = useWeather(client);
   const music = useMusic(client, connected);
@@ -167,13 +170,13 @@ export function App() {
   );
   const taskGroups = dashboardTasks.users.length > 0 ? dashboardTasks.users : googleTasks.groups;
   const { toggleItem: toggleDashboardTask } = dashboardTasks;
-  const { toggle: toggleGoogleTask } = googleTasks;
   const handleToggleTodo = useCallback(
     (uid: string, currentStatus: string, listId?: string) => {
-      if (isGoogleTaskList(listId)) return toggleGoogleTask(uid, currentStatus, listId);
+      // Google Tasks are view only; check them off in the Google Tasks app.
+      if (isGoogleTaskList(listId)) return;
       return toggleDashboardTask(uid, currentStatus, listId);
     },
-    [toggleGoogleTask, toggleDashboardTask],
+    [toggleDashboardTask],
   );
 
   // Apply theme at App level so it stays active regardless of which view is shown
@@ -357,6 +360,10 @@ export function App() {
   }, [updateSettings]);
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
+    if (isGoogleCalendarId(event.calendarId)) {
+      setViewEvent(event);
+      return;
+    }
     setSelectedEvent(event);
     setPrefillDate(null);
     setPrefillTime(null);
@@ -364,11 +371,13 @@ export function App() {
   }, []);
 
   const handleSlotClick = useCallback((date: string, hour: number) => {
+    // With Google connected the calendar is view only: no adding by tapping a slot.
+    if (googleEnabled) return;
     setSelectedEvent(null);
     setPrefillDate(date);
     setPrefillTime(`${String(hour).padStart(2, '0')}:00`);
     setShowModal(true);
-  }, []);
+  }, [googleEnabled]);
 
   const handleCloseModal = useCallback(() => {
     setShowModal(false);
@@ -471,6 +480,7 @@ export function App() {
   }, [selectedEvent, deleteEvent, refetchEventsForWeek, visibleWeekStart, handleCloseModal]);
 
   const handleEventReschedule = useCallback(async (event: CalendarEvent, newDate: string, newHour: number) => {
+    if (isGoogleCalendarId(event.calendarId)) return; // view only
     try {
       const oldStart = new Date(event.start);
       const oldEnd = new Date(event.end);
@@ -507,6 +517,8 @@ export function App() {
       console.error('Failed to reschedule event:', err);
     }
   }, [updateEvent, deleteEvent, createEvent, refetchEventsForWeek, visibleWeekStart]);
+
+  const canMoveEvent = useCallback((event: CalendarEvent) => !isGoogleCalendarId(event.calendarId), []);
 
   const handleAddEvent = useCallback(() => {
     setSelectedEvent(null);
@@ -694,7 +706,8 @@ export function App() {
             todoItems={todoItems}
             taskGroups={taskGroups}
             onToggleTodo={handleToggleTodo}
-            onAddEvent={handleAddEvent}
+            onAddEvent={googleEnabled ? undefined : handleAddEvent}
+            canMoveEvent={canMoveEvent}
             onOpenWeather={() => setActiveView('weather')}
             onOpenNews={() => setActiveView('news')}
             onOpenTasks={() => setActiveView('tasks')}
@@ -723,7 +736,7 @@ export function App() {
               onSelectedDateChange={setDashboardDate}
             />
             <OmniAdd
-              onAddEvent={handleAddEvent}
+              onAddEvent={googleEnabled ? undefined : handleAddEvent}
               onAddGroceryItem={() => setActiveView('grocery')}
               onAddChore={() => handleChangeView('chores')}
               onNavigateTimer={() => setActiveView('timer')}
@@ -829,6 +842,7 @@ export function App() {
                   onEventReschedule={handleEventReschedule}
                   onVisibleWeekChange={setVisibleWeekStart}
                   weekStartsOn={settings.weekStartsOn}
+                  canMoveEvent={canMoveEvent}
                 />
               </div>
               <CalendarSidebar
@@ -844,7 +858,7 @@ export function App() {
 
             {/* Omni-Add FAB */}
             <OmniAdd
-              onAddEvent={handleAddEvent}
+              onAddEvent={googleEnabled ? undefined : handleAddEvent}
               onAddGroceryItem={() => setActiveView('grocery')}
               onAddChore={() => handleChangeView('chores')}
               onNavigateTimer={() => setActiveView('timer')}
@@ -854,16 +868,17 @@ export function App() {
         )}
       </div>
 
+      {/* Read-only details for Google events */}
+      {viewEvent && (
+        <EventDetails event={viewEvent} timeFormat={settings.timeFormat} onClose={() => setViewEvent(null)} />
+      )}
+
       {/* Event Modal */}
       {showModal && (
         <EventModal
           event={selectedEvent}
-          calendars={calendars}
-          defaultCalendarId={
-            settings.defaultCalendar && calendars.some((c) => c.id === settings.defaultCalendar)
-              ? settings.defaultCalendar
-              : gcal.primaryCalendarId ?? settings.defaultCalendar
-          }
+          calendars={calendars.filter((c) => !isGoogleCalendarId(c.id))}
+          defaultCalendarId={settings.defaultCalendar}
           onSave={handleSaveEvent}
           onDelete={handleDeleteEvent}
           onClose={handleCloseModal}

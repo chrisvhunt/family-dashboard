@@ -9,7 +9,7 @@ import {
   saveBridgeConfig,
   topicFeed,
 } from './google-bridge';
-import { parseSimpleRrule, toBridgeWrite, isGoogleCalendarId } from '../hooks/useGoogleCalendar';
+import { isGoogleCalendarId } from '../hooks/useGoogleCalendar';
 import { daysUntil } from '../components/cards/TasksCard';
 
 describe('news feed helpers', () => {
@@ -63,41 +63,10 @@ describe('bridge config', () => {
   });
 });
 
-describe('Google Calendar writes', () => {
+describe('Google calendar ids', () => {
   it('recognises Google calendar ids', () => {
     expect(isGoogleCalendarId('gcal:family@group.calendar.google.com')).toBe(true);
     expect(isGoogleCalendarId('calendar.home')).toBe(false);
-  });
-
-  it('parses the simple repeat rules the event form produces', () => {
-    expect(parseSimpleRrule('FREQ=WEEKLY;UNTIL=20261231T235959Z')).toEqual({ freq: 'WEEKLY', until: '2026-12-31' });
-    expect(parseSimpleRrule('FREQ=DAILY')).toEqual({ freq: 'DAILY', until: undefined });
-    expect(parseSimpleRrule('FREQ=YEARLY')).toBeUndefined();
-    expect(parseSimpleRrule(undefined)).toBeUndefined();
-  });
-
-  it('turns a timed event into absolute times using the tablet clock', () => {
-    const w = toBridgeWrite('gcal:primary@example.com', {
-      summary: 'Dentist',
-      start_date_time: '2026-12-03T15:30:00',
-      end_date_time: '2026-12-03T16:30:00',
-    });
-    expect(w.calendarId).toBe('primary@example.com');
-    expect(w.allDay).toBe(false);
-    expect(new Date(w.start!).getTime()).toBe(new Date(2026, 11, 3, 15, 30).getTime());
-    expect(new Date(w.end!).getTime() - new Date(w.start!).getTime()).toBe(60 * 60 * 1000);
-  });
-
-  it('keeps all-day dates as plain dates', () => {
-    const w = toBridgeWrite('gcal:x', { summary: 'Trip', start_date: '2026-12-20', end_date: '2026-12-23', rrule: 'FREQ=MONTHLY;UNTIL=20270601T235959Z' }, 'uid|1');
-    expect(w).toMatchObject({ allDay: true, startDate: '2026-12-20', endDate: '2026-12-23', eventId: 'uid|1' });
-    expect(w.recurrence).toEqual({ freq: 'MONTHLY', until: '2027-06-01' });
-  });
-
-  it('leaves times alone for title-only edits', () => {
-    const w = toBridgeWrite('gcal:x', { summary: 'Renamed' }, 'uid|1');
-    expect(w.allDay).toBeUndefined();
-    expect(w.start).toBeUndefined();
   });
 });
 

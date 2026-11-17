@@ -4,7 +4,8 @@ import { hapticTap } from '../hooks/useHaptics';
 import { useTranslation } from '../i18n';
 
 interface OmniAddProps {
-  onAddEvent: () => void;
+  /** Omit to hide the Event action (e.g. when Google Calendar is view only). */
+  onAddEvent?: () => void;
   onAddGroceryItem: () => void;
   onAddChore: () => void;
   onNavigateTimer: () => void;
@@ -33,7 +34,9 @@ export function OmniAdd({
     { id: 'timer', label: t('nav.timer'), icon: <Timer size={22} />, handler: onNavigateTimer },
     { id: 'chore', label: t('omniAdd.chore'), icon: <CheckSquare size={22} />, handler: onAddChore },
     { id: 'grocery', label: t('omniAdd.grocery'), icon: <ShoppingCart size={22} />, handler: onAddGroceryItem },
-    { id: 'event', label: t('omniAdd.event'), icon: <CalendarPlus size={22} />, handler: onAddEvent },
+    ...(onAddEvent
+      ? [{ id: 'event', label: t('omniAdd.event'), icon: <CalendarPlus size={22} />, handler: onAddEvent }]
+      : []),
   ];
 
   const toggle = useCallback(() => {

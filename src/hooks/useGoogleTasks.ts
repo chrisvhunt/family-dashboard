@@ -13,8 +13,9 @@ export function isGoogleTaskList(listId?: string): boolean {
 const REFRESH_MS = 2 * 60 * 1000;
 
 /**
- * Google Tasks via the Apps Script bridge: open tasks plus anything checked
- * off today (so a finished item stays visible, struck through, until tomorrow).
+ * Google Tasks via the Apps Script bridge, view only: open tasks plus anything
+ * checked off today (shown struck through until tomorrow). Tasks are checked
+ * off in the Google Tasks app, not on the dashboard.
  */
 export function useGoogleTasks(enabled: boolean) {
   const [lists, setLists] = useState<BridgeTaskList[]>([]);
@@ -63,6 +64,7 @@ export function useGoogleTasks(enabled: boolean) {
         listId: GTASKS_PREFIX + t.listId,
         userId: groupByList ? GTASKS_PREFIX + t.listId : undefined,
         due: t.due,
+        readOnly: true,
       })),
     [tasks, groupByList],
   );
@@ -78,20 +80,5 @@ export function useGoogleTasks(enabled: boolean) {
     [lists, tasks, groupByList],
   );
 
-  const toggle = useCallback(async (uid: string, currentStatus: string, listId?: string) => {
-    const task = tasks.find((t) => t.id === uid && (!listId || GTASKS_PREFIX + t.listId === listId));
-    if (!task) return;
-    const next: BridgeTask['status'] = currentStatus === 'needs_action' ? 'completed' : 'needs_action';
-
-    // Optimistic: flip it right away so the tap feels instant on the wall.
-    setTasks((prev) => prev.map((t) => (t.id === uid ? { ...t, status: next } : t)));
-    try {
-      await googleBridge.setTaskStatus(task.listId, task.id, next);
-    } catch (err) {
-      setTasks((prev) => prev.map((t) => (t.id === uid ? { ...t, status: task.status } : t)));
-      setError(err instanceof Error ? err.message : 'Could not update the task');
-    }
-  }, [tasks]);
-
-  return { items, groups, lists, error, refresh, toggle };
+  return { items, groups, lists, error, refresh };
 }

@@ -23,7 +23,9 @@ interface WallViewProps {
   todoItems: TodoItem[];
   taskGroups: TaskmateUser[];
   onToggleTodo: (uid: string, currentStatus: string, listId?: string) => void;
-  onAddEvent: () => void;
+  /** Omit to hide the Add event button (Google Calendar is view only). */
+  onAddEvent?: () => void;
+  canMoveEvent?: (event: CalendarEvent) => boolean;
   onOpenWeather: () => void;
   onOpenNews: () => void;
   onOpenTasks: () => void;
@@ -50,6 +52,7 @@ export function WallView({
   taskGroups,
   onToggleTodo,
   onAddEvent,
+  canMoveEvent,
   onOpenWeather,
   onOpenNews,
   onOpenTasks,
@@ -75,9 +78,11 @@ export function WallView({
           <span className="wall-time">{format(now, timeFormat === '24h' ? 'HH:mm' : 'h:mm a', { locale: dateLocale })}</span>
           <span className="wall-date">{format(now, 'EEEE, MMMM d', { locale: dateLocale })}</span>
         </div>
-        <button type="button" className="wall-add" onClick={onAddEvent}>
-          <Plus size={18} /> {t('omniAdd.event')}
-        </button>
+        {onAddEvent && (
+          <button type="button" className="wall-add" onClick={onAddEvent}>
+            <Plus size={18} /> {t('omniAdd.event')}
+          </button>
+        )}
       </header>
 
       <div className="wall-calendar">
@@ -89,6 +94,7 @@ export function WallView({
           onEventReschedule={onEventReschedule}
           onVisibleWeekChange={onVisibleWeekChange}
           weekStartsOn={weekStartsOn}
+          canMoveEvent={canMoveEvent}
         />
       </div>
 

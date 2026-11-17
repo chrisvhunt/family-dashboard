@@ -35,6 +35,18 @@ function TaskRow({
 }) {
   const { t } = useTranslation();
   const done = item.status === 'completed';
+  if (item.readOnly) {
+    // View-only source (Google Tasks): a marker instead of a tappable checkbox.
+    return (
+      <li className={`task-checklist-item task-checklist-item--readonly${done ? ' task-checklist-item--done' : ''}`}>
+        <span className={`task-readonly-mark${done ? ' task-readonly-mark--done' : ''}`} aria-hidden="true">
+          {done ? '✓' : ''}
+        </span>
+        <span className={`task-checklist-label${done ? ' task-checklist-label--done' : ''}`}>{item.summary}</span>
+        {!done && item.due && <DueBadge due={item.due} />}
+      </li>
+    );
+  }
   return (
     <li className={`task-checklist-item${done ? ' task-checklist-item--done' : ''}`}>
       <button

@@ -9,6 +9,8 @@ interface EventDetailsPopoverProps {
   anchor: DOMRect;
   onClose: () => void;
   onEdit: () => void;
+  /** View-only event (Google): the button opens details instead of the editor. */
+  readOnly?: boolean;
 }
 
 const POPOVER_WIDTH = 320;
@@ -22,7 +24,7 @@ const RECURRENCE_LABEL_KEYS = {
   monthly: 'eventModal.repeatMonthly',
 } as const;
 
-export function EventDetailsPopover({ event, anchor, onClose, onEdit }: EventDetailsPopoverProps) {
+export function EventDetailsPopover({ event, anchor, onClose, onEdit, readOnly }: EventDetailsPopoverProps) {
   const { t, dateLocale } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number }>(() => computePosition(anchor, ESTIMATED_HEIGHT));
@@ -123,7 +125,7 @@ export function EventDetailsPopover({ event, anchor, onClose, onEdit }: EventDet
             className="event-details-popover-btn event-details-popover-btn--primary"
             onClick={onEdit}
           >
-            {t('eventDetails.openEdit')}
+            {readOnly ? 'More details' : t('eventDetails.openEdit')}
           </button>
         </div>
       </div>

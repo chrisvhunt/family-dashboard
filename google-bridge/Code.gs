@@ -4,10 +4,13 @@
  * A tiny Google Apps Script web app that runs under YOUR Google account and
  * hands the Beacon dashboard what it needs, as JSON:
  *
- *   - Google Calendar events (read, create, edit, delete)
- *   - Google Tasks (read, check off)
+ *   - Google Calendar events (view only)
+ *   - Google Tasks (view only)
  *   - News feeds (RSS / Atom, fetched server-side so the browser has no CORS issues)
  *   - NHL team schedule / score (Chicago Blackhawks by default)
+ *
+ * VIEW ONLY: appsscript.json limits this script to read-only access to your
+ * calendars and tasks, so it cannot create, change or delete anything there.
  *
  * Every request must carry the secret key that setup() creates, so only your
  * dashboard can read your calendar. See google-bridge/README.md for setup.
@@ -67,14 +70,10 @@ function handle_(p) {
     checkKey_(p.key);
     var action = String(p.action || '');
     switch (action) {
-      case 'ping':          return ok_({ timeZone: tz_() });
+      case 'ping':          return ok_({ timeZone: tz_(), readOnly: true });
       case 'calendars':     return ok_(listCalendars_());
       case 'events':        return ok_(listEvents_(p.start, p.end));
-      case 'createEvent':   return ok_(createEvent_(p));
-      case 'updateEvent':   return ok_(updateEvent_(p));
-      case 'deleteEvent':   return ok_(deleteEvent_(p));
       case 'tasks':         return ok_(listTasks_());
-      case 'setTaskStatus': return ok_(setTaskStatus_(p));
       case 'news':          return ok_(getNews_(p.feeds));
       case 'nhl':           return ok_(getNhl_(p.team));
       default:              throw new Error('Unknown action: ' + action);
@@ -103,13 +102,6 @@ var tzCache_ = null;
 function tz_() {
   if (!tzCache_) tzCache_ = CalendarApp.getDefaultCalendar().getTimeZone() || Session.getScriptTimeZone();
   return tzCache_;
-}
-
-/** 'yyyy-MM-dd' → Date at local midnight (script time zone). */
-function parseDay_(s) {
-  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
-  if (!m) throw new Error('Bad date: ' + s);
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
 /** Full ISO timestamp (with Z or offset) → Date. */
@@ -176,91 +168,9 @@ function listEvents_(startIso, endIso) {
   return out;
 }
 
-function calendarById_(id) {
-  var cal = CalendarApp.getCalendarById(String(id || ''));
-  if (!cal) throw new Error('Calendar not found');
-  return cal;
-}
-
-/** Event ids from listEvents_ are "<iCalUID>|<start epoch ms>" so repeating instances stay unique. */
-function findEvent_(cal, id) {
-  var parts = String(id || '').split('|');
-  var uid = parts[0];
-  var startMs = Number(parts[1]);
-  if (startMs) {
-    var near = cal.getEvents(new Date(startMs - 60000), new Date(startMs + 60000));
-    for (var i = 0; i < near.length; i++) {
-      if (near[i].getId() === uid && near[i].getStartTime().getTime() === startMs) return near[i];
-    }
-  }
-  var ev = cal.getEventById(uid);
-  if (!ev) throw new Error('Event not found (it may have been changed in Google Calendar). Refresh and try again.');
-  return ev;
-}
-
-function eventOptions_(p) {
-  var opts = {};
-  if (p.description) opts.description = String(p.description);
-  if (p.location) opts.location = String(p.location);
-  return opts;
-}
-
-function createEvent_(p) {
-  var cal = calendarById_(p.calendarId);
-  var title = String(p.summary || '').trim() || 'New event';
-  var opts = eventOptions_(p);
-
-  if (p.recurrence && p.recurrence.freq) {
-    var rec = CalendarApp.newRecurrence();
-    var freq = String(p.recurrence.freq).toUpperCase();
-    var rule = freq === 'DAILY' ? rec.addDailyRule() : freq === 'WEEKLY' ? rec.addWeeklyRule() : rec.addMonthlyRule();
-    if (p.recurrence.until) {
-      var until = parseDay_(p.recurrence.until);
-      until.setHours(23, 59, 59);
-      rule.until(until);
-    }
-    var series = p.allDay
-      ? cal.createAllDayEventSeries(title, parseDay_(p.startDate), rec, opts)
-      : cal.createEventSeries(title, parseInstant_(p.start), parseInstant_(p.end), rec, opts);
-    return { id: series.getId() };
-  }
-
-  var ev = p.allDay
-    ? cal.createAllDayEvent(title, parseDay_(p.startDate), parseDay_(p.endDate), opts)
-    : cal.createEvent(title, parseInstant_(p.start), parseInstant_(p.end), opts);
-  return { id: ev.getId() + '|' + ev.getStartTime().getTime() };
-}
-
-function updateEvent_(p) {
-  var cal = calendarById_(p.calendarId);
-  var ev = findEvent_(cal, p.eventId);
-  if (ev.isRecurringEvent()) {
-    throw new Error('This is a repeating event. Please change it in the Google Calendar app.');
-  }
-  if (p.summary != null && String(p.summary).trim()) ev.setTitle(String(p.summary).trim());
-  if (p.description != null) ev.setDescription(String(p.description));
-  if (p.location != null) ev.setLocation(String(p.location));
-  if (p.allDay === true && p.startDate) {
-    ev.setAllDayDates(parseDay_(p.startDate), parseDay_(p.endDate || p.startDate));
-  } else if (p.allDay === false && p.start && p.end) {
-    ev.setTime(parseInstant_(p.start), parseInstant_(p.end));
-  }
-  return { id: ev.getId() + '|' + ev.getStartTime().getTime() };
-}
-
-function deleteEvent_(p) {
-  var cal = calendarById_(p.calendarId);
-  var ev = findEvent_(cal, p.eventId);
-  if (ev.isRecurringEvent()) {
-    throw new Error('This is a repeating event. Please delete it in the Google Calendar app.');
-  }
-  ev.deleteEvent();
-  return { deleted: true };
-}
-
 // ---------------------------------------------------------------------------
-// Google Tasks (requires the "Tasks API" advanced service — already declared
-// in appsscript.json)
+// Google Tasks, view only (uses the "Tasks API" advanced service declared in
+// appsscript.json)
 // ---------------------------------------------------------------------------
 function listTasks_() {
   var lists = Tasks.Tasklists.list({ maxResults: 20 }).items || [];
@@ -298,15 +208,6 @@ function listTasks_() {
     lists: lists.map(function (l) { return { id: l.id, title: l.title }; }),
     tasks: tasks,
   };
-}
-
-function setTaskStatus_(p) {
-  if (!p.listId || !p.taskId) throw new Error('listId and taskId are required');
-  var resource = p.status === 'completed'
-    ? { status: 'completed' }
-    : { status: 'needsAction', completed: null };
-  Tasks.Tasks.patch(resource, String(p.listId), String(p.taskId));
-  return { ok: true };
 }
 
 // ---------------------------------------------------------------------------

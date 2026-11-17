@@ -2,8 +2,9 @@
 
 This is a customized fork of [Beacon](https://github.com/asachs01/beacon) (MIT license). It runs **without Home Assistant** and shows:
 
-- **Google Calendar.** All the calendars you have checked in Google Calendar, color-coded. You can add events from the tablet.
-- **Google Tasks.** Your open action items with due-date badges (Overdue / Today / Tomorrow). Tap to check one off.
+- **Google Calendar.** All the calendars you have checked in Google Calendar, color-coded. Tap an event to see its details.
+- **Google Tasks.** Your open action items with due-date badges (Overdue / Today / Tomorrow).
+- **View only.** The dashboard has read-only permission for your Google account, so it can never add, change or delete events or tasks. Make changes in the Google apps on your phone or computer.
 - **Weather.** Current conditions plus a 7-day and hourly forecast from Open-Meteo. No account needed.
 - **News.** Top US headlines, local news for your city, and any topics you add. Stories under an hour old get a red **New** tag.
 - **Blackhawks.** Live score, last result and next game. You can pick any NHL team, or none.
@@ -16,7 +17,7 @@ Setup has three parts and takes about 20 minutes.
 
 ## Part 1: Create the Google bridge (10 min)
 
-The bridge is a small script that runs in your own Google account. It gives the dashboard your calendar, tasks and news. Nobody else hosts or sees your data.
+The bridge is a small script that runs in your own Google account. It gives the dashboard your calendar, tasks and news. Nobody else hosts or sees your data, and its permission is **view only**.
 
 1. Go to **https://script.google.com** and click **New project**. Name it `Beacon Google Bridge`.
 2. Click the **gear icon (Project Settings)** and tick **Show "appsscript.json" manifest file in editor**.
@@ -28,6 +29,7 @@ The bridge is a small script that runs in your own Google account. It gives the 
 4. In the function dropdown at the top, pick **`setup`** and click **Run**.
    - Google asks for permission. Click **Review permissions**, choose your account, then **Advanced → Go to Beacon Google Bridge (unsafe)** → **Allow**.
      It says "unsafe" only because you wrote the script yourself and Google hasn't reviewed it.
+     The permissions it asks for are **view** your calendars, **view** your tasks, and connect to external services (for the news feeds and scores).
    - When it finishes, open **Execution log**. **Copy the key** it printed (a long string of letters and numbers).
 5. Click **Deploy → New deployment**:
    - Click the gear next to "Select type" and choose **Web app**.
@@ -88,8 +90,7 @@ Every time you push a change, the site rebuilds by itself.
 
 ## Good to know
 
-- **Repeating events:** you can create them on the dashboard, but edit or delete them in the Google Calendar app. The dashboard explains this if you try.
-- **Adding tasks:** add them in the Google Tasks app on your phone (or Gmail/Calendar's task panel). They appear on the wall within 2 minutes. Due dates sort to the top.
+- **Making changes:** add, edit or delete events in Google Calendar, and add or check off tasks in Google Tasks, on your phone or computer. The wall picks up changes within 2–5 minutes. Due dates sort to the top of the task list.
 - **Refresh rates:**
   - Calendar: every 5 minutes, and whenever the tablet wakes up.
   - Tasks: every 2 minutes.

@@ -1,7 +1,8 @@
 /**
  * Client for the Beacon Google Bridge (google-bridge/Code.gs), a small Google
  * Apps Script web app that serves Google Calendar, Google Tasks, news feeds
- * and NHL scores to the dashboard without Home Assistant.
+ * and NHL scores to the dashboard without Home Assistant. Google data is
+ * view only: the bridge has read-only permission and no write actions.
  *
  * Connection details live in this browser's localStorage (the tablet), so
  * nothing about your Google account is baked into the published site.
@@ -210,23 +211,6 @@ export interface NhlSummary {
   next: NhlGame | null;
 }
 
-export interface BridgeEventWrite {
-  calendarId: string;
-  eventId?: string;
-  summary?: string;
-  description?: string;
-  location?: string;
-  allDay?: boolean;
-  /** All-day: first day, yyyy-MM-dd */
-  startDate?: string;
-  /** All-day: day AFTER the last day (exclusive), yyyy-MM-dd */
-  endDate?: string;
-  /** Timed: absolute ISO timestamps */
-  start?: string;
-  end?: string;
-  recurrence?: { freq: 'DAILY' | 'WEEKLY' | 'MONTHLY'; until?: string };
-}
-
 // ---------------------------------------------------------------------------
 // Transport
 // ---------------------------------------------------------------------------
@@ -306,17 +290,15 @@ async function bridgePost<T>(action: string, body: object): Promise<T> {
   return unwrap<T>(res);
 }
 
+/** The bridge is view only: Google Calendar and Google Tasks can't be changed from the dashboard. */
+export const GOOGLE_READ_ONLY_MESSAGE =
+  'Google Calendar and Google Tasks are view-only on this dashboard. Make changes in the Google apps on your phone or computer.';
+
 export const googleBridge = {
-  ping: (cfg?: Pick<BridgeConfig, 'url' | 'key'>) => bridgeGet<{ timeZone: string }>('ping', {}, cfg),
+  ping: (cfg?: Pick<BridgeConfig, 'url' | 'key'>) => bridgeGet<{ timeZone: string; readOnly?: boolean }>('ping', {}, cfg),
   calendars: () => bridgeGet<BridgeCalendar[]>('calendars'),
   events: (startIso: string, endIso: string) => bridgeGet<BridgeEvent[]>('events', { start: startIso, end: endIso }),
-  createEvent: (event: BridgeEventWrite) => bridgePost<{ id: string }>('createEvent', event),
-  updateEvent: (event: BridgeEventWrite) => bridgePost<{ id: string }>('updateEvent', event),
-  deleteEvent: (calendarId: string, eventId: string) =>
-    bridgePost<{ deleted: boolean }>('deleteEvent', { calendarId, eventId }),
   tasks: () => bridgeGet<{ lists: BridgeTaskList[]; tasks: BridgeTask[] }>('tasks'),
-  setTaskStatus: (listId: string, taskId: string, status: 'completed' | 'needs_action') =>
-    bridgePost<{ ok: boolean }>('setTaskStatus', { listId, taskId, status }),
   news: (feeds: NewsFeedConfig[]) =>
     bridgePost<Record<string, FeedResult>>('news', { feeds: feeds.map((f) => ({ id: f.id, url: f.url })) }),
   nhl: (team: string) => bridgeGet<NhlSummary>('nhl', { team }),

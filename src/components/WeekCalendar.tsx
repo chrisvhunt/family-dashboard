@@ -26,6 +26,8 @@ interface WeekCalendarProps {
   onEventReschedule?: (event: CalendarEvent, newDate: string, newHour: number) => void;
   onVisibleWeekChange?: (weekStart: Date) => void;
   weekStartsOn: 0 | 1;
+  /** Return false for events that can't be moved (view-only sources). Default: all movable. */
+  canMoveEvent?: (event: CalendarEvent) => boolean;
 }
 
 const START_HOUR = 7;
@@ -69,7 +71,7 @@ interface MultiDaySpan {
   lane: number;
 }
 
-export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClick, onEventReschedule, onVisibleWeekChange, weekStartsOn }: WeekCalendarProps) {
+export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClick, onEventReschedule, onVisibleWeekChange, weekStartsOn, canMoveEvent }: WeekCalendarProps) {
   const today = new Date();
   const todayWeekStart = startOfWeek(today, { weekStartsOn });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -676,7 +678,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
                     event={event}
                     onClick={handleEventBlockClick}
                     style={getEventStyle(event, overlapLayout.get(event.id))}
-                    draggable
+                    draggable={canMoveEvent ? canMoveEvent(event) : true}
                     expanded={expandedEventId === event.id}
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}
@@ -702,6 +704,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
           event={expandedEvent}
           anchor={expandedAnchor}
           onClose={closeExpanded}
+          readOnly={canMoveEvent ? !canMoveEvent(expandedEvent) : false}
           onEdit={() => {
             const ev = expandedEvent;
             closeExpanded();

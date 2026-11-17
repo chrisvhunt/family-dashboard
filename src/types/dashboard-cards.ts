@@ -13,6 +13,8 @@ export interface TodoItem {
   listId?: string;
   /** Due date (yyyy-MM-dd), when the task source provides one (Google Tasks). */
   due?: string | null;
+  /** Shown but can't be checked off here (Google Tasks are view only). */
+  readOnly?: boolean;
 }
 
 export type CardSize = 'sm' | 'md' | 'lg';
