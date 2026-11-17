@@ -1,0 +1,23 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+
+# Local Netlify folder
+.netlify
+
+# Capacitor native builds (generated, not committed)
+ios/App/App/public
+ios/App/Pods
+ios/App/App.xcworkspace/xcuserdata
+ios/App/DerivedData
+android/app/src/main/assets/public
+android/.gradle
+android/app/build
+android/build
+android/local.properties
+
+# Video recording raw footage (too large for git)
+docs/video/raw/
+.superpowers/

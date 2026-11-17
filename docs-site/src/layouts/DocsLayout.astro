@@ -1,0 +1,37 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import Sidebar from '@/components/Sidebar.astro';
+import Feedback from '@/components/Feedback.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const pagePath = Astro.url.pathname;
+---
+
+<BaseLayout title={title} description={description}>
+  <Header />
+  <div class="container flex-1 flex">
+    <Sidebar />
+    <main class="flex-1 min-w-0 py-8 lg:pl-8 lg:border-l lg:border-[var(--td-border)]">
+      <article class="prose">
+        <slot />
+      </article>
+      <Feedback pageTitle={title} pagePath={pagePath} />
+    </main>
+  </div>
+  <Footer />
+  <script>
+    // Clone sidebar nav into mobile menu
+    const desktopSidebar = document.querySelector('.sidebar-nav');
+    const mobileNav = document.getElementById('mobile-sidebar-content');
+    if (desktopSidebar && mobileNav) {
+      mobileNav.innerHTML = desktopSidebar.innerHTML;
+    }
+  </script>
+</BaseLayout>

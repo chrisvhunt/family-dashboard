@@ -1,0 +1,480 @@
+/* ============================================================
+   Beacon — News, team scores, task due dates, Google setup
+   ============================================================ */
+
+/* ---------- Task due-date badges ---------- */
+.task-due {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-tertiary, rgba(0, 0, 0, 0.05));
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.task-due--overdue { background: rgba(239, 68, 68, 0.14); color: var(--color-error, #dc2626); }
+.task-due--today { background: rgba(249, 115, 22, 0.16); color: #c2410c; }
+.task-due--soon { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+
+/* ---------- NHL score strip ---------- */
+.nhl-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--bg-secondary);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.nhl-strip--compact {
+  padding: 8px 10px;
+  gap: 4px 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.nhl-strip-team { font-weight: 700; }
+.nhl-strip-item { color: var(--text-secondary); }
+.nhl-strip-item--win { color: var(--color-success, #15803d); font-weight: 600; }
+.nhl-strip-item--loss { color: var(--color-error, #dc2626); font-weight: 600; }
+.nhl-strip-item--live { color: var(--color-error, #dc2626); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.nhl-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-error, #dc2626);
+  animation: nhl-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nhl-pulse { 50% { opacity: 0.3; } }
+
+/* ---------- "New" pill ---------- */
+.news-new-pill {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-error, #dc2626);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+/* ---------- News screen ---------- */
+.news-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+.news-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.news-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+.news-updated { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.news-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface, transparent);
+  color: var(--text-primary);
+  font-size: 15px;
+  cursor: pointer;
+}
+.news-refresh:disabled { opacity: 0.6; }
+.news-spin { animation: news-spin 1s linear infinite; }
+@keyframes news-spin { to { transform: rotate(360deg); } }
+
+.news-error {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error, #dc2626);
+  font-size: 14px;
+}
+
+.news-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.news-column {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 0;
+}
+.news-column-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.news-list { list-style: none; margin: 0; padding: 0; }
+.news-story + .news-story { border-top: 1px solid var(--border-subtle); }
+.news-story-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  color: inherit;
+  text-decoration: none;
+}
+.news-story-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-story-meta { font-size: 13px; color: var(--text-muted); }
+.news-empty { font-size: 14px; color: var(--text-muted); padding: 8px 0; }
+.news-empty--card { padding: 4px 0; }
+.news-footnote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ---------- Dashboard "Headlines" card ---------- */
+.news-card-heading-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.news-card-list { list-style: none; margin: 0; padding: 0; }
+.news-card-item a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 4px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+.news-card-item a:active { background: var(--bg-hover, rgba(0, 0, 0, 0.04)); }
+.news-card-item + .news-card-item { border-top: 1px solid var(--border-subtle); }
+.news-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card-meta { font-size: 12px; color: var(--text-muted); }
+
+/* ---------- Google & News settings panel ---------- */
+.google-panel { display: flex; flex-direction: column; gap: 20px; }
+.google-panel .settings-group { display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; }
+.google-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.google-panel-help { margin: 0; }
+.google-field { display: flex; flex-direction: column; gap: 6px; }
+.google-input { width: 100%; min-width: 0; flex: 1; }
+.google-key-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.google-key-row .google-input { flex: 1 1 220px; }
+.google-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.google-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.google-status--ok { color: var(--color-success, #15803d); }
+.google-status--error { color: var(--color-error, #dc2626); }
+
+.google-place-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.google-place {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface, transparent);
+  color: var(--text-primary);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.google-place-sub { color: var(--text-muted); font-size: 13px; }
+
+.google-feed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.google-feed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+.google-feed-label { font-weight: 600; color: var(--text-primary); }
+.google-feed-actions { display: inline-flex; gap: 6px; }
+.google-advanced summary { cursor: pointer; font-size: 14px; color: var(--text-secondary); padding: 4px 0; }
+.google-advanced .google-key-row { margin-top: 8px; }
+.google-reset { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- First-run setup ---------- */
+.google-setup {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  background: var(--bg-primary);
+  overflow-y: auto;
+}
+.google-setup-card {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  border-radius: 20px;
+  background: var(--bg-surface, #fff);
+  box-shadow: var(--shadow-md, 0 8px 30px rgba(0, 0, 0, 0.08));
+}
+.google-setup-header { display: flex; gap: 16px; align-items: flex-start; }
+.google-setup-title { font-family: var(--font-display); font-size: 26px; margin: 0 0 6px; color: var(--text-primary); }
+.google-setup-sub { margin: 0; color: var(--text-secondary); line-height: 1.5; }
+.google-setup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.google-setup-footer-right { display: flex; gap: 8px; }
+.google-link-btn {
+  background: none;
+  border: none;
+  padding: 8px 0;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .news-view { padding: 20px 16px; }
+  .google-setup-card { padding: 20px; }
+}
+
+/* ============================================================
+   Wall view: week calendar left, one column right
+   (action items, weather, news), all visible on a tablet
+   ============================================================ */
+.beacon-main > .wall { flex: 1; min-height: 0; }
+
+.wall {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 27vw, 380px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "header side" "calendar side";
+  height: 100%;
+  min-height: 0;
+}
+
+.wall-header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px 8px 20px;
+}
+.wall-header-left { display: flex; align-items: baseline; gap: 16px; min-width: 0; }
+.wall-time {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+[data-theme="dark"] .wall-time { color: var(--text-primary); }
+.wall-date {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wall-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wall-calendar {
+  grid-area: calendar;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 8px 0 16px;
+}
+
+.wall-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 12px 12px 12px 8px;
+  border-left: 1px solid var(--border-subtle);
+}
+.wall-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bg-surface, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+}
+/* Tasks and news share the leftover height; weather takes what it needs. */
+.wall-panel--tasks { flex: 0 1 auto; max-height: 46%; }
+.wall-panel--weather { flex: 0 0 auto; }
+.wall-panel--news { flex: 1 1 0; }
+/* News never scrolls: headlines that don't fully fit wrap into a hidden
+   second column, so the list always ends on a whole story. */
+.wall-panel--news .wall-panel-body { display: flex; flex-direction: column; overflow: hidden; }
+.wall-panel--news .news-card-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+.wall-panel--news .news-card-item { width: 100%; }
+.wall-panel--news .nhl-strip { flex-shrink: 0; }
+.wall-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.wall-panel-body::-webkit-scrollbar { display: none; }
+.wall-panel-heading {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.wall-panel-heading-btn { all: unset; cursor: pointer; display: inline-flex; gap: 4px; padding: 4px 0; }
+.wall-empty { font-size: 14px; color: var(--text-muted); padding: 6px 0; }
+
+/* Tighter task rows so more fit without scrolling */
+.wall-panel .task-checklist-item { min-height: 38px; padding: 0; gap: 4px; }
+.wall-panel .task-checkbox { width: 38px; height: 38px; flex-shrink: 0; }
+.wall-panel .task-checklist-label { font-size: 14px; line-height: 1.25; }
+.wall-panel .news-card-item a { padding: 6px 2px; }
+
+/* Weather panel */
+.wall-weather { cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+.wall-weather-now { display: flex; align-items: center; gap: 10px; }
+.wall-weather-icon { font-size: 34px; line-height: 1; }
+.wall-weather-temp {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.wall-weather-cond { display: flex; flex-direction: column; font-size: 14px; color: var(--text-secondary); }
+.wall-weather-hilo { font-size: 12px; color: var(--text-muted); }
+.wall-forecast { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.wall-forecast-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+.wall-forecast-name { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+.wall-forecast-icon { font-size: 20px; line-height: 1.1; }
+.wall-forecast-temps { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.wall-forecast-temps span { font-weight: 400; color: var(--text-muted); }
+
+/* Portrait tablets: calendar on top, the three panels side by side below */
+@media (orientation: portrait), (max-width: 900px) {
+  .wall {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 36%);
+    grid-template-areas: "header" "calendar" "side";
+  }
+  .wall-calendar { padding: 0 12px; }
+  .wall-side {
+    flex-direction: row;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding: 12px;
+  }
+  .wall-panel--tasks, .wall-panel--news { flex: 1 1 0; max-height: none; }
+  .wall-panel--weather { flex: 0 0 210px; }
+}
+
+/* Phones: let the page scroll instead */
+@media (max-width: 600px) {
+  .wall { display: flex; flex-direction: column; height: auto; overflow-y: auto; }
+  .wall-calendar { min-height: 70vh; }
+  .wall-side { flex-direction: column; }
+  .wall-panel--weather { flex: 0 0 auto; }
+  .wall-panel--news .news-card-list { flex-wrap: nowrap; }
+  .wall-time { font-size: 30px; }
+}
